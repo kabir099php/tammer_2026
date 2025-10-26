@@ -13,9 +13,7 @@ return new class extends Migration
 
             
             $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
-
             $table->string('name', 255);
-            $table->string('vendor_name_ar', 225)->nullable(); 
             $table->string('phone', 20)->index();       
             $table->string('email', 100)->nullable();   
             $table->string('logo', 255)->nullable();    
@@ -23,8 +21,6 @@ return new class extends Migration
             $table->string('longitude', 255)->nullable();
             $table->text('address')->nullable();        
             $table->tinyInteger('status')->default(1);  
-            $table->integer('order_count')->unsigned()->default(0);
-            $table->integer('total_order')->unsigned()->default(0);
             $table->string('slug', 255)->nullable();    
             $table->timestamps();                       
         });

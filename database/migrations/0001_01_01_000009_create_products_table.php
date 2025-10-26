@@ -14,7 +14,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('image', 30)->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
-            $table->integer('branch_id')->nullable();
             $table->string('barcode', 225)->nullable();
             $table->decimal('price', 24, 2)->default(0.00);
             $table->decimal('tax', 24, 2)->default(0.00);
