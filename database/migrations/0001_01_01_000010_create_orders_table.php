@@ -24,7 +24,6 @@ return new class extends Migration
             $table->unsignedBigInteger('status')->nullable();
             $table->unsignedBigInteger('store_id')->nullable();
             $table->double('tax_percentage', 24, 3)->nullable();
-            $table->double('partially_paid_amount', 23, 3)->default(0.000);
             $table->tinyInteger('is_guest')->default(0);
             $table->timestamps();
         });
