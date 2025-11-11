@@ -16,6 +16,7 @@ return new class extends Migration
             $table->decimal('price', 24, 2)->default(0.00);
             $table->decimal('tax_amount', 24, 2)->default(0.00);
             $table->decimal('discount', 24, 2)->default(0.00);
+            $table->string('variation', 255)->nullable();
             $table->timestamps();
 
             // Foreign keys

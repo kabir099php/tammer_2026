@@ -21,7 +21,9 @@ return new class extends Migration
             $table->string('remember_token', 100)->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
+            $table->string('bank_name', 255)->nullable();
             $table->string('branch', 255)->nullable();
+            $table->string('holder_name', 255)->nullable();
             $table->string('account_no', 255)->nullable();
             $table->string('image', 255)->nullable();
             $table->tinyInteger('status')->nullable()->default(1);
