@@ -13,16 +13,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(RoleAndPermissionSeeder::class);
         // 1. Create a default Admin User for the Filament Panel
         if (! User::where('email', 'admin@example.com')->exists()) {
-            User::create([
+           $adminUser =  User::create([
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'), // Use 'password' or a secure password
             ]);
-            // Optional: If you have roles set up, assign the 'admin' role here
-            // User::where('email', 'admin@example.com')->first()->assignRole('admin');
+            $adminUser->assignRole('super admin');
+            
         }
 
     }
