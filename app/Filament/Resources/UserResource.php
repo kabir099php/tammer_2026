@@ -78,7 +78,7 @@ class UserResource extends Resource
                 // Spatie Roles Selection Field
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name') 
-                    ->multiple()
+                    
                     ->preload()
                     ->options(Role::pluck('name', 'id')->toArray())
                     ->required()

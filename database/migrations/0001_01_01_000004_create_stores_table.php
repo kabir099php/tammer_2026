@@ -12,7 +12,7 @@ return new class extends Migration
             $table->bigIncrements('id');
 
             
-            $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users');
 
             $table->string('name', 255);
             $table->string('vendor_name_ar', 225)->nullable(); 

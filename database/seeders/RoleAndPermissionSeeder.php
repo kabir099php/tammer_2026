@@ -27,6 +27,10 @@ class RoleAndPermissionSeeder extends Seeder
             'update_users',  // Corresponds to canUpdate (Edit action/page)
             'delete_users',  // Corresponds to canDelete (Delete action)
             'delete_bulk_users', // Corresponds to Bulk Delete action
+            'categroy', // Corresponds to Bulk Delete action
+            'branches', // Corresponds to Bulk Delete action
+            'products', // Corresponds to Bulk Delete action
+            'stores', // Corresponds to Bulk Delete action
         ];
 
         foreach ($permissions as $permission) {
@@ -50,7 +54,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         
         // Vendor can view the dashboard and maybe view users (optional)
-        $vendorRole->givePermissionTo(['view dashboard']); 
+        $vendorRole->givePermissionTo(['view dashboard','products','stores','branches']); 
 
         
         // Employee can view the dashboard

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Store extends Model
 {
@@ -10,7 +11,7 @@ class Store extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'vendor_id',
+        'user_id',
         'name',
         'phone',
         'email',
@@ -24,7 +25,7 @@ class Store extends Model
 
     protected $casts = [
         'id' => 'integer',
-        'vendor_id' => 'integer',
+        'user_id' => 'integer',
         'status' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -32,9 +33,14 @@ class Store extends Model
 
     // Relationships
 
-    public function vendor()
+    public function user()
     {
-        return $this->belongsTo(Vendor::class, 'vendor_id');
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function getvendorlist ()
+    {
+        return  User::all();//$this->belongsTo(User::class, 'vendor_id');
     }
 
     public function products()

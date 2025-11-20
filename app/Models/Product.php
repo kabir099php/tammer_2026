@@ -11,6 +11,7 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'name_ar',
         'description',
         'image',
         'category_id',
@@ -22,6 +23,7 @@ class Product extends Model
         'discount_type',
         'status',
         'store_id',
+        'branch_id',
         'unit_id',
         'order_count',
         'avg_rating',
@@ -41,6 +43,7 @@ class Product extends Model
         'discount' => 'decimal:2',
         'status' => 'integer',
         'store_id' => 'integer',
+        
         'unit_id' => 'integer',
         'order_count' => 'integer',
         'avg_rating' => 'double',
@@ -76,5 +79,10 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class, 'item_id'); // Assuming item_id refers to product_id
+    }
+    public function branch()
+    {
+        
+        return $this->belongsTo(Branch::class, 'branch_id');
     }
 }
