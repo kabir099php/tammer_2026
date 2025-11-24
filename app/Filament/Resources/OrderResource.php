@@ -218,24 +218,10 @@ class OrderResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('order_status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'delivered' => 'Delivered',
-                        'cancelled' => 'Cancelled',
-                    ])
-                    ->label('Filter by Fulfillment Status'),
-
-                SelectFilter::make('payment_status')
-                    ->options([
-                        'paid' => 'Paid',
-                        'unpaid' => 'Unpaid',
-                    ])
-                    ->label('Filter by Payment Status'),
+               
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                
             ])
             ->bulkActions([
                 BulkActionGroup::make([
