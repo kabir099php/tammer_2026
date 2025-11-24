@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -46,5 +47,10 @@ class User extends Authenticatable
     public function reviews()
     {
         return $this->hasMany(Review::class, 'user_id');
+    }
+    public function stores(): HasMany
+    {
+        // This links the User's ID (local key) to the 'user_id' column on the 'stores' table.
+        return $this->hasMany(Store::class, 'user_id');
     }
 }
