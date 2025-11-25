@@ -15,14 +15,13 @@ use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder; 
 use Filament\Forms\Get; 
 use Filament\Tables\Contracts\HasTable; 
-
 use Rap2hpoutre\FastExcel\FastExcel; 
-
 use App\Models\Store;
 use App\Models\Branch;
 use App\Models\Category;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class ProductResource extends Resource
 {
@@ -30,9 +29,18 @@ class ProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
+    /**
+     * Define the form structure for creating and editing products.
+     */
     public static function form(Form $form): Form
     {
-        // ... (existing form method remains unchanged)
+        $user = Auth::user();
+        // Check if the user is a vendor (adjust 'vendor' string as per your roles setup)
+        $isVendor = $user && method_exists($user, 'hasRole') && $user->hasRole('vendor');
+        
+        // Assuming the vendor is linked to one store via a 'store_id' column on the User model
+        $vendorStoreId = $isVendor ? $user->store_id : null; 
+
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
@@ -47,44 +55,58 @@ class ProductResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\FileUpload::make('image')
                     ->image(),
-               Forms\Components\Select::make('store_id')
-                ->relationship(
-                    'store', 
-                    'name',   
-                )
-                ->label('Store')
-                ->searchable()
-                ->preload()
-                ->required()
-                ->live()
-                ->afterStateUpdated(function (Forms\Set $set) {
-                    $set('branch_id', null); 
-                }), 
-            Forms\Components\Select::make('branch_id')
-                ->relationship(
-                    'branch', 
-                    'name',
-                    
-                    fn (Builder $query, Forms\Get $get) => $query->when(
-                        $get('store_id'),
-                        fn (Builder $query, $storeId) => $query->where('store_id', $storeId)
+               
+                // --- VENDOR LOGIC: Store ID Hidden and Default ---
+                Forms\Components\Select::make('store_id')
+                    ->relationship(
+                        'store', 
+                        'name',   
                     )
-                )
-                ->label('Branch')
-                ->searchable()
-                ->preload()
-                ->required()
-                ->nullable(),
-                Forms\Components\Select::make('categroy_id')
-                ->relationship(
-                    'category', 
-                    'name',   
-                    
-                )
-                ->label('Category')
-                ->searchable()
-                ->preload()
-                ->required(),
+                    ->label('Store')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function (Forms\Set $set) {
+                        $set('branch_id', null); 
+                    }) 
+                    ->default($vendorStoreId) // Set the default value for vendors
+                    ->hidden($isVendor)       // Hide the field for vendors
+                    // Ensure the value is saved even when hidden
+                    ->dehydrated($isVendor || ! $isVendor),
+            
+                Forms\Components\Select::make('branch_id')
+                    ->relationship(
+                        'branch', 
+                        'name',
+                        
+                        fn (Builder $query, Forms\Get $get) => $query->when(
+                            $get('store_id'),
+                            fn (Builder $query, $storeId) => $query->where('store_id', $storeId)
+                        )
+                    )
+                    ->label('Branch')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->nullable(),
+                
+                // --- VENDOR LOGIC: Category Filtering ---
+                Forms\Components\Select::make('category_id')
+                    ->relationship(
+                        'category', 
+                        'name',
+                        // Filter categories to only those created by the logged-in user if they are a vendor
+                        fn (Builder $query) => $query->when(
+                            $isVendor,
+                            fn (Builder $q) => $q->where('user_id', $user->id)
+                        )
+                    )
+                    ->label('Category')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                
                 Forms\Components\TextInput::make('barcode')
                     ->maxLength(225)
                     ->default(null),
@@ -94,12 +116,16 @@ class ProductResource extends Resource
                     ->default(0.00)
                     ->prefix('SAR'),
                 
-                Forms\Components\TextInput::make('status')
+                // --- MODIFIED STATUS FIELD: Select Dropdown ---
+                Forms\Components\Select::make('status')
                     ->required()
-                    ->numeric()
-                    ->default(1),
+                    ->options([
+                        1 => 'Active',
+                        0 => 'Inactive',
+                    ])
+                    ->default(1)
+                    ->label('Status'),
                
-                
                 Forms\Components\TextInput::make('stock')
                     ->numeric()
                     ->default(0),
@@ -108,11 +134,12 @@ class ProductResource extends Resource
                     ->default(null),
                 Forms\Components\Textarea::make('images')
                     ->columnSpanFull(),
-                
-                    
             ]);
     }
 
+    /**
+     * Define the table structure.
+     */
     public static function table(Table $table): Table
     {
         return $table
@@ -164,7 +191,7 @@ class ProductResource extends Resource
                 ]),
             ])
             ->headerActions([
-                // --- NEW IMPORT ACTION ---
+                // --- MASS IMPORT ACTION ---
                 Action::make('import_products')
                     ->label('Import Products (Mass Add/Update)')
                     ->icon('heroicon-o-document-arrow-up')
@@ -176,11 +203,10 @@ class ProductResource extends Resource
                             ->label('Upload .xlsx or .csv file')
                             ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'])
                             ->required()
-                            ->storeFiles(false), // Process the temporary file path directly
+                            ->storeFiles(false),
                     ])
                     ->action(function (array $data) {
                         
-                        // FIX: Access the file object directly without [0]
                         $uploadedFile = $data['import_file']; 
                         $filePath = $uploadedFile->getRealPath();
                         
@@ -190,19 +216,16 @@ class ProductResource extends Resource
                         DB::beginTransaction();
 
                         try {
-                            // Read the Excel/CSV file using FastExcel
                             (new FastExcel())->import($filePath, function ($line) use (&$importedCount, &$updatedCount) {
                                 
-                                // Clean up the ID field
                                 $productId = trim($line['ID'] ?? '');
 
                                 // 1. Find or Create Related Models by Name
-                                // This ensures the store, branch, and category exist before linking
                                 $store = Store::firstOrCreate(['name' => $line['Store']]);
                                 $branch = Branch::where('store_id', $store->id)->firstOrCreate(['name' => $line['Branch'], 'store_id' => $store->id]);
                                 $category = Category::firstOrCreate(['name' => $line['Category']]);
 
-                                // 2. Prepare Product Data (The rest of the fields to update/create)
+                                // 2. Prepare Product Data
                                 $productData = [
                                     'name' => $line['English Name'] ?? null,
                                     'name_ar' => $line['Arabic Name'] ?? null,
@@ -212,28 +235,25 @@ class ProductResource extends Resource
                                     'barcode' => $line['Barcode'] ?? null,
                                     'price' => floatval($line['Price'] ?? 0),
                                     'stock' => intval($line['Stock'] ?? 0),
-                                    'status' => 1, // Default status
+                                    'status' => 1,
                                 ];
 
                                 // 3. Logic for Update or Create
                                 if (!empty($productId)) {
-                                    // Attempt to find and update by ID
                                     $product = Product::where('id', $productId)->first();
                                     if ($product) {
                                         $product->update($productData);
                                         $updatedCount++;
-                                        return; // Move to the next row
+                                        return;
                                     }
                                 }
                                 
-                                // Create new product if ID was empty or product wasn't found
                                 Product::create($productData);
                                 $importedCount++;
                             });
 
                             DB::commit();
 
-                            // Send success notification
                             Notification::make()
                                 ->title('Products Imported Successfully')
                                 ->body("Created **{$importedCount}** new products and updated **{$updatedCount}** existing products.")
@@ -244,16 +264,15 @@ class ProductResource extends Resource
                         } catch (\Exception $e) {
                             DB::rollBack();
 
-                            // Send error notification
                             Notification::make()
                                 ->title('Import Failed')
-                                ->body('An error occurred during import. Check the file format. Error: ' . $e->getMessage())
+                                ->body('An error occurred during import. Error: ' . $e->getMessage())
                                 ->danger()
                                 ->duration(10000)
                                 ->send();
                         }
                     }),
-                // --- END NEW IMPORT ACTION ---
+                // --- END IMPORT ACTION ---
 
                 // Existing EXPORT ACTION
                 Action::make('export_products')
@@ -261,19 +280,15 @@ class ProductResource extends Resource
                     ->icon('heroicon-o-document-arrow-down') 
                     ->action(function (HasTable $livewire) { 
                         
-                        // 1. Get the filtered query
                         $query = $livewire->getFilteredTableQuery();
 
-                        // 2. FIX: Use ->get() to return a standard Collection instead of ->cursor()
                         $data = $query->with(['store', 'branch', 'category'])->get();
 
                         $fileName = 'products-' . now()->format('Ymd_His') . '.xlsx';
                         
-                        // 3. Use FastExcel to export the standard Collection
                         return (new FastExcel($data))->download(
                             $fileName, 
                             function ($product) {
-                                // Define the column output mapping
                                 return [
                                     'ID' => $product->id,
                                     'English Name' => $product->name,
@@ -290,6 +305,25 @@ class ProductResource extends Resource
                     })
                     ->color('primary') 
             ]);
+    }
+
+    /**
+     * Filters the base query for the table based on the vendor role.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = Auth::user();
+
+        // Check if the currently authenticated user has the 'vendor' role
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('vendor')) {
+            // Apply a constraint to only show products whose category belongs to this user
+            $query->whereHas('category', function (Builder $categoryQuery) use ($user) {
+                $categoryQuery->where('user_id', $user->id);
+            });
+        }
+
+        return $query;
     }
 
     public static function getRelations(): array

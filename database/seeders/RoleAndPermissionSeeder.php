@@ -19,14 +19,10 @@ class RoleAndPermissionSeeder extends Seeder
         // --- Define Granular User Permissions ---
         $permissions = [
             // General
-            'view dashboard',
+            'dashboard',
 
             // User Management
-            'view_users',    // Corresponds to canViewAny (Resource visibility)
-            'create_users',  // Corresponds to canCreate (Create button/page)
-            'update_users',  // Corresponds to canUpdate (Edit action/page)
-            'delete_users',  // Corresponds to canDelete (Delete action)
-            'delete_bulk_users', // Corresponds to Bulk Delete action
+            'users',
             'categroy', // Corresponds to Bulk Delete action
             'branches', // Corresponds to Bulk Delete action
             'products', // Corresponds to Bulk Delete action
@@ -54,14 +50,14 @@ class RoleAndPermissionSeeder extends Seeder
 
         
         // Vendor can view the dashboard and maybe view users (optional)
-        $vendorRole->givePermissionTo(['view dashboard','products','stores','branches']); 
+        $vendorRole->givePermissionTo(['dashboard','products','branches']); 
 
         
-        // Employee can view the dashboard
-        $employeeRole->givePermissionTo(['view dashboard']);
+        // Employee can the dashboard
+        $employeeRole->givePermissionTo(['dashboard']);
 
         
-        // Basic User can only view the dashboard
-        $userRole->givePermissionTo('view dashboard');
+        // Basic User can only the dashboard
+        $userRole->givePermissionTo('dashboard');
     }
 }

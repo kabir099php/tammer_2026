@@ -25,6 +25,11 @@ class StoreResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->can('users');
+    }
+
     public static function form(Form $form): Form
     {
         $isVendor = Auth::user()?->hasRole('vendor');
@@ -40,10 +45,30 @@ class StoreResource extends Resource
                 ->label('Store Owner (Vendor)')
                 ->searchable()
                 ->preload()
-                ->required()
                 // 2. Hide this field if the user is a vendor
-                ->hidden(fn () => $isVendor) 
-                // 3. Make it non-required for the system to handle it
+                
+                  // HIDE FOR VENDOR
+  // hide for vendors
+    ->hidden(fn () => Auth::user()?->hasRole('vendor'))
+
+    // VERY IMPORTANT: always generate initial state
+    ->default(fn () =>
+        Auth::user()?->hasRole('vendor')
+            ? Auth::id()
+            : null
+    )
+
+    // force saving even if hidden
+    ->dehydrated(true)
+
+    // set the actual value that will be saved
+    ->dehydrateStateUsing(fn ($state) =>
+        Auth::user()?->hasRole('vendor')
+            ? Auth::id()
+            : $state
+    )
+
+
                 ->required(fn () => !$isVendor),
                 
                 Forms\Components\TextInput::make('name')
@@ -62,32 +87,22 @@ class StoreResource extends Resource
                     ->email()
                     ->maxLength(100)
                     ->default(null),
-                // Forms\Components\TextInput::make('logo')
-                //     ->maxLength(255)
-                //     ->default(null),
-                // Forms\Components\TextInput::make('latitude')
-                //     ->maxLength(255)
-                //     ->default(null),
-                // Forms\Components\TextInput::make('longitude')
-                //     ->maxLength(255)
-                //     ->default(null),
-                // Forms\Components\Textarea::make('address')
-                //     ->columnSpanFull(),
-                Forms\Components\TextInput::make('status')
+                
+                // Status Dropdown
+                Forms\Components\Select::make('status')
+                    ->options([
+                        1 => 'Active',
+                        0 => 'Not Active',
+                    ])
+                    ->label('Status')
                     ->required()
-                    ->numeric()
                     ->default(1),
-                // Forms\Components\TextInput::make('order_count')
-                //     ->required()
-                //     ->numeric()
-                //     ->default(0),
-                // Forms\Components\TextInput::make('total_order')
-                //     ->required()
-                //     ->numeric()
-                //     ->default(0),
+
+                // Slug Hidden
                 Forms\Components\TextInput::make('slug')
                     ->maxLength(255)
-                    ->default(null),
+                    ->default(null)
+                    ->hidden(),
             ]);
     }
 
@@ -136,7 +151,7 @@ class StoreResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])// --- Crucial addition for vendor-specific filtering ---
+            ])
             ->modifyQueryUsing(function (Builder $query) use ($isVendor) {
                 if ($isVendor) {
                     $userId = Auth::id();

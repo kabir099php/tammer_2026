@@ -35,9 +35,18 @@ class CategoryResource extends Resource
                         $set('slug', Str::slug($state)); 
                     }),
                 Forms\Components\TextInput::make('slug')
-                ->required()
-                ->maxLength(191)
-                ->unique(ignoreRecord: true),
+                    ->hidden()
+                    ->dehydrated(true) // <— REQUIRED TO SAVE
+                    ->required()
+                    ->maxLength(191)
+                    ->unique(ignoreRecord: true)
+                    ->default(fn (callable $get) => Str::slug($get('name'))),
+                     Forms\Components\Select::make('branch_id')
+                ->label('Branch')
+                ->relationship('branch', 'name')
+                ->searchable()
+                ->preload()
+                ->required(),
                 Forms\Components\FileUpload::make('image')
                     ->image(),
               Forms\Components\Select::make('status')
@@ -57,7 +66,11 @@ class CategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\ImageColumn::make('image'),
+                
+                Tables\Columns\TextColumn::make('branch.name')
+                    ->label('Branch') // Set a user-friendly label
+                    ->searchable()   // Allow searching by branch name
+                    ->sortable(),
                 
                 Tables\Columns\TextColumn::make('status')
                     ->numeric()
@@ -90,6 +103,21 @@ class CategoryResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    // --- ADD THIS METHOD ---
+    public static function getEloquentQuery(): Builder
+    {
+        // Start with the base query
+        $query = parent::getEloquentQuery();
+
+        $user = auth()->user();
+        if ($user && $user->hasRole('vendor')) {
+            
+             $query->where('user_id', $user->id);
+        }
+
+        return $query;
     }
 
     public static function getRelations(): array

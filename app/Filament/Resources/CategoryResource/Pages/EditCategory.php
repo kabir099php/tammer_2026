@@ -16,4 +16,15 @@ class EditCategory extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+{
+    $user = auth()->user();
+    $data['user_id'] = $user->id;
+    $store = \App\Models\Store::where('user_id', $user->id)->first();
+
+    $data['store_id'] = $store?->id; 
+
+    return $data;
+}
 }

@@ -28,13 +28,13 @@ class UserResource extends Resource
     // 1. Check if the current user can see the User Resource in the navigation
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('view_users');
+        return auth()->user()->can('users');
     }
 
     // 2. Check if the current user can create a user
     public static function canCreate(): bool
     {
-        return auth()->user()->can('create_users');
+        return auth()->user()->can('users');
     }
 
     // 3. Check if the current user can delete a single user
@@ -48,13 +48,13 @@ class UserResource extends Resource
     public static function canUpdate(User $record): bool
     {
         // You might want to prevent a user from editing themselves or a higher-level admin
-        return auth()->user()->can('update_users');
+        return auth()->user()->can('users');
     }
 
     // 5. Check if the current user can delete multiple users
     public static function canDeleteAny(): bool
     {
-        return auth()->user()->can('delete_bulk_users');
+        return auth()->user()->can('users');
     }
 
     // =========================================================================
