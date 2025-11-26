@@ -20,13 +20,13 @@ class RoleAndPermissionSeeder extends Seeder
         $permissions = [
             // General
             'dashboard',
-
-            // User Management
             'users',
-            'categroy', // Corresponds to Bulk Delete action
-            'branches', // Corresponds to Bulk Delete action
-            'products', // Corresponds to Bulk Delete action
-            'stores', // Corresponds to Bulk Delete action
+            'category', 
+            'branches', 
+            'products', 
+            'stores', 
+            'roles', 
+            'orders',
         ];
 
         foreach ($permissions as $permission) {
@@ -37,10 +37,10 @@ class RoleAndPermissionSeeder extends Seeder
         // Permission::where('name', 'manage users')->delete(); 
 
         // --- Create Roles ---
-        $superAdminRole = Role::firstOrCreate(['name' => 'super admin', 'guard_name' => 'web']);
-        $vendorRole = Role::firstOrCreate(['name' => 'vendor', 'guard_name' => 'web']);
-        $employeeRole = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
-        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+        $superAdminRole = Role::firstOrCreate(['name' => 'super admin', 'guard_name' => 'web','user_id' => 1]);
+        $vendorRole = Role::firstOrCreate(['name' => 'vendor', 'guard_name' => 'web','user_id' => 1]);
+        $employeeRole = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web','user_id' => 1]);
+        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web','user_id' => 1]);
 
         // --- Assign Permissions ---
 
@@ -50,7 +50,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         
         // Vendor can view the dashboard and maybe view users (optional)
-        $vendorRole->givePermissionTo(['dashboard','products','branches']); 
+        $vendorRole->givePermissionTo(['dashboard','products','branches' ,'orders','category','roles']); 
 
         
         // Employee can the dashboard

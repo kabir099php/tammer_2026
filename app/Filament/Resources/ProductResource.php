@@ -28,7 +28,10 @@ class ProductResource extends Resource
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
-
+        public static function canViewAny(): bool
+    {
+        return auth()->user()->can('products');
+    }
     /**
      * Define the form structure for creating and editing products.
      */

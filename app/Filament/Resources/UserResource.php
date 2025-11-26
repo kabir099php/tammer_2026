@@ -81,9 +81,8 @@ class UserResource extends Resource
                     
                     ->preload()
                     ->options(Role::pluck('name', 'id')->toArray())
-                    ->required()
-                    // IMPORTANT: Only allow users with update_users to modify roles
-                    ->disabled(!auth()->user()->can('update_users')), 
+                    ->required(),
+                    
 
                 Forms\Components\DateTimePicker::make('email_verified_at')
                     ->label('Email Verified At')

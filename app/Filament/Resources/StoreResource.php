@@ -27,7 +27,7 @@ class StoreResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('users');
+        return auth()->user()->can('stores');
     }
 
     public static function form(Form $form): Form

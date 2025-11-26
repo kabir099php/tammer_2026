@@ -21,6 +21,11 @@ class BranchResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
 
+        public static function canViewAny(): bool
+    {
+        return auth()->user()->can('branches');
+    }
+
     public static function form(Form $form): Form
     {
         // 1. Check the logged-in user's ID
